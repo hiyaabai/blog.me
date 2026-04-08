@@ -14,12 +14,14 @@
       --text:#1a1a1a; --corner:rgba(0,0,0,.2); --grid:rgba(0,0,0,.03); --shadow:rgba(0,0,0,.1);
       --sns:#bbb; --sns-hbg:rgba(0,0,0,.05); --sns-hc:#333;
       --btn-bg:#1a1a1a; --btn-bd:#1a1a1a; --btn-c:#f5f5f5; --btn-hc:#fff;
+      --shimmer-hi:rgba(0,0,0,.07);
     }
     :root.night {
       --bg:#0d0d0f; --card-bg:#111114; --card-border:#2a2a30;
       --text:#f0f0f0; --corner:rgba(200,255,0,.45); --grid:rgba(255,255,255,.02); --shadow:rgba(0,0,0,.6);
       --sns:#444; --sns-hbg:rgba(200,255,0,.08); --sns-hc:#c8ff00;
       --btn-bg:#f0f0f0; --btn-bd:#f0f0f0; --btn-c:#1a1a1a; --btn-hc:#000;
+      --shimmer-hi:rgba(255,255,255,.13);
     }
 
     html, body {
@@ -35,32 +37,71 @@
     }
 
     @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes shimmer {
+      0%   { transform:translateX(-120%) skewX(-20deg); }
+      100% { transform:translateX(220%)  skewX(-20deg); }
+    }
+    @keyframes floatDot {
+      0%,100% { transform:translateY(0)   scale(1);   opacity:.35; }
+      50%      { transform:translateY(-14px) scale(1.2); opacity:.7;  }
+    }
+    @keyframes pulse-ring {
+      0%   { transform:scale(.85); opacity:.6; }
+      70%  { transform:scale(1.15); opacity:0; }
+      100% { transform:scale(.85); opacity:0; }
+    }
 
-    .wrap { display:flex; flex-direction:column; align-items:center; gap:16px; animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both; }
+    .wrap {
+      display:flex; flex-direction:column; align-items:center; gap:16px;
+      animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both;
+      perspective:1200px;
+    }
 
     .card {
       position:relative; width:min(680px,calc(100vw - 40px)); aspect-ratio:1.75/1;
       background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px;
       display:flex; align-items:center; justify-content:center; padding:0 8%;
-      box-shadow:0 40px 80px var(--shadow),inset 0 1px 0 rgba(255,255,255,.05);
-      transition:background .5s,border-color .5s,box-shadow .5s;
+      box-shadow:
+        0 2px 4px var(--shadow),
+        0 8px 16px var(--shadow),
+        0 24px 48px var(--shadow),
+        0 48px 96px var(--shadow),
+        inset 0 1px 0 rgba(255,255,255,.08),
+        inset 0 -1px 0 rgba(0,0,0,.12);
+      transition:background .5s,border-color .5s,box-shadow .5s,transform .1s ease-out;
+      transform-style:preserve-3d;
+      will-change:transform;
+      overflow:hidden;
     }
-    .card::before,.card::after,.c-br,.c-bl {
-      content:''; position:absolute; width:14px; height:14px; border-color:var(--corner); border-style:solid;
-      transition:border-color .5s;
+    /* shimmer sweep — day uses dark tint, night uses light */
+    .card::before {
+      content:''; position:absolute; inset:0; pointer-events:none; z-index:2;
+      background:linear-gradient(105deg,transparent 38%,var(--shimmer-hi) 50%,transparent 62%);
+      transform:translateX(-120%) skewX(-20deg);
+      animation:shimmer 4s cubic-bezier(.4,0,.6,1) infinite;
     }
-    .card::before{top:12px;left:12px;border-width:1px 0 0 1px}
-    .card::after {top:12px;right:12px;border-width:1px 1px 0 0}
+    /* top-edge gloss */
+    .card::after {
+      content:''; position:absolute; top:0; left:0; right:0; height:40%; pointer-events:none; z-index:1;
+      background:linear-gradient(180deg,rgba(255,255,255,.06) 0%,transparent 100%);
+      border-radius:16px 16px 0 0;
+    }
+    .c-tl,.c-tr,.c-br,.c-bl {
+      position:absolute; width:14px; height:14px; border-color:var(--corner); border-style:solid;
+      transition:border-color .5s; z-index:3;
+    }
+    .c-tl{top:12px;left:12px;border-width:1px 0 0 1px}
+    .c-tr{top:12px;right:12px;border-width:1px 1px 0 0}
     .c-br{bottom:12px;right:12px;border-width:0 1px 1px 0}
     .c-bl{bottom:12px;left:12px;border-width:0 0 1px 1px}
 
-    .leaders { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+    .leaders { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:4; }
 
     .email-addr {
       font-family:'Ubuntu','SF Mono',sans-serif;
       font-size:clamp(2rem,6.5vw,3.8rem); font-weight:700; letter-spacing:.12em;
       color:var(--text); white-space:nowrap; user-select:none;
-      position:relative; z-index:1; transition:color .5s;
+      position:relative; z-index:5; transition:color .5s;
     }
     #s-at { -webkit-text-stroke:0; }
     [data-b] { cursor:none; transition:opacity .2s; }
@@ -78,6 +119,7 @@
     .sns {
       position:absolute; bottom:0; left:0; right:0; padding:0 8% 4%;
       display:flex; align-items:center; justify-content:center; gap:clamp(10px,2.5vw,22px);
+      z-index:5;
     }
     .sns a {
       display:flex; align-items:center; justify-content:center;
@@ -89,22 +131,33 @@
     .sns svg { width:56%; height:56%; fill:currentColor; }
 
     .theme-btn {
-      width:34px; height:34px; border-radius:50%;
-      border:1px solid var(--btn-bd); background:var(--btn-bg); color:var(--btn-c);
-      cursor:pointer; display:flex; align-items:center; justify-content:center;
-      transition:color .3s,background .3s,border-color .3s,transform .2s; flex-shrink:0;
+      width:44px; height:44px; border-radius:50%;
+      border:none; background:transparent;
+      cursor:pointer; padding:0; flex-shrink:0;
+      margin-top:24px;
+      filter:drop-shadow(0 4px 12px rgba(0,0,0,.35));
+      transition:filter .3s, transform .2s;
     }
-    .theme-btn:hover { color:var(--btn-hc); transform:scale(1.1); }
-    .theme-btn svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
-    .night .i-moon{display:none} .night .i-sun{display:block}
-    .day   .i-sun{display:none}  .day   .i-moon{display:block}
+    .theme-btn:hover { transform:scale(1.12); filter:drop-shadow(0 6px 18px rgba(0,0,0,.5)); }
+    .theme-btn canvas { display:block; border-radius:50%; }
+    /* hide old svg icons — canvas replaces them */
+    .theme-btn svg { display:none !important; }
 
     @media(max-width:480px){ .card{aspect-ratio:auto;min-height:62vw;padding:0 6%} }
+
+    .icp {
+      position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
+      font-size:10px; letter-spacing:.04em; white-space:nowrap;
+      color:var(--sns); opacity:.45; transition:opacity .2s, color .5s;
+      text-decoration:none; font-family:inherit;
+    }
+    .icp:hover { opacity:.75; }
   </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
+    <div class="c-tl"></div><div class="c-tr"></div>
     <div class="c-br"></div><div class="c-bl"></div>
     <svg class="leaders" aria-hidden="true" id="leaders"></svg>
     <div class="email-addr">
@@ -123,11 +176,13 @@
     </div>
   </div>
   <button class="theme-btn" id="themeBtn" title="Toggle theme">
+    <canvas id="globeCanvas" width="44" height="44"></canvas>
     <svg class="i-sun"  viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
     <svg class="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
   </button>
 </div>
 <!-- custom crosshair -->
+<a class="icp" href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank" rel="noopener">鲁ICP备2025167849号-1</a>
 <svg id="xhair" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
   <line x1="16" y1="2"  x2="16" y2="13"/>
   <line x1="16" y1="19" x2="16" y2="30"/>
@@ -149,7 +204,174 @@
     draw();
   });
 
-  // custom crosshair
+  // ── Sun / Moon canvas button ──────────────────────────────────────────────
+  (function initGlobe() {
+    const canvas = document.getElementById('globeCanvas');
+    const ctx = canvas.getContext('2d');
+    const S = 44, C = S/2;
+    let rot = 0;
+
+    function frame() {
+      rot += 0.012;
+      ctx.clearRect(0, 0, S, S);
+      const isDay = theme === 'day';
+
+      if (isDay) {
+        // ── SUN ──
+        const R = 11;
+        const rays = 8;
+        // glow halo
+        const halo = ctx.createRadialGradient(C, C, R, C, C, R+10);
+        halo.addColorStop(0, 'rgba(255,210,60,.45)');
+        halo.addColorStop(1, 'rgba(255,210,60,0)');
+        ctx.beginPath(); ctx.arc(C, C, R+10, 0, Math.PI*2);
+        ctx.fillStyle = halo; ctx.globalAlpha = 1; ctx.fill();
+
+        // rays
+        ctx.save();
+        ctx.translate(C, C);
+        ctx.rotate(rot);
+        ctx.strokeStyle = '#f5c030';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < rays; i++) {
+          const a = (i / rays) * Math.PI * 2;
+          const r0 = R + 3, r1 = R + 8;
+          ctx.globalAlpha = 0.85;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a)*r0, Math.sin(a)*r0);
+          ctx.lineTo(Math.cos(a)*r1, Math.sin(a)*r1);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // sun disc gradient
+        const grd = ctx.createRadialGradient(C-3, C-3, 1, C, C, R);
+        grd.addColorStop(0, '#fff7a0');
+        grd.addColorStop(0.4, '#ffd93d');
+        grd.addColorStop(1, '#f5a623');
+        ctx.beginPath(); ctx.arc(C, C, R, 0, Math.PI*2);
+        ctx.fillStyle = grd; ctx.globalAlpha = 1; ctx.fill();
+
+        // specular
+        const spec = ctx.createRadialGradient(C-4, C-4, 1, C-3, C-3, R*0.7);
+        spec.addColorStop(0, 'rgba(255,255,255,.6)');
+        spec.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.beginPath(); ctx.arc(C, C, R, 0, Math.PI*2);
+        ctx.fillStyle = spec; ctx.fill();
+
+      } else {
+        // ── MOON ──
+        const R = 13;
+        // glow
+        const halo = ctx.createRadialGradient(C, C, R, C, C, R+9);
+        halo.addColorStop(0, 'rgba(180,200,255,.3)');
+        halo.addColorStop(1, 'rgba(180,200,255,0)');
+        ctx.beginPath(); ctx.arc(C, C, R+9, 0, Math.PI*2);
+        ctx.fillStyle = halo; ctx.globalAlpha = 1; ctx.fill();
+
+        // moon disc
+        const grd = ctx.createRadialGradient(C-4, C-4, 1, C, C, R);
+        grd.addColorStop(0, '#e8eeff');
+        grd.addColorStop(0.5, '#c0c8e8');
+        grd.addColorStop(1, '#7080a8');
+        ctx.beginPath(); ctx.arc(C, C, R, 0, Math.PI*2);
+        ctx.fillStyle = grd; ctx.globalAlpha = 1; ctx.fill();
+
+        // crescent shadow — offset circle cuts into the disc
+        const ox = 5, oy = -2;
+        ctx.save();
+        ctx.beginPath(); ctx.arc(C, C, R, 0, Math.PI*2);
+        ctx.clip();
+        const sgrd = ctx.createRadialGradient(C+ox-2, C+oy-2, 1, C+ox, C+oy, R*1.05);
+        sgrd.addColorStop(0, 'rgba(10,12,28,.95)');
+        sgrd.addColorStop(0.6, 'rgba(10,12,28,.85)');
+        sgrd.addColorStop(1, 'rgba(10,12,28,0)');
+        ctx.beginPath(); ctx.arc(C+ox, C+oy, R, 0, Math.PI*2);
+        ctx.fillStyle = sgrd; ctx.fill();
+        ctx.restore();
+
+        // craters
+        const craters = [{x:C-3,y:C+3,r:2.2},{x:C+4,y:C-2,r:1.4},{x:C-1,y:C-5,r:1}];
+        craters.forEach(({x,y,r}) => {
+          ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(80,90,120,.35)'; ctx.globalAlpha = 1; ctx.fill();
+        });
+
+        // specular
+        const spec = ctx.createRadialGradient(C-5, C-5, 1, C-4, C-4, R*0.6);
+        spec.addColorStop(0, 'rgba(255,255,255,.35)');
+        spec.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.beginPath(); ctx.arc(C, C, R, 0, Math.PI*2);
+        ctx.fillStyle = spec; ctx.fill();
+      }
+
+      requestAnimationFrame(frame);
+    }
+    frame();
+  })();
+
+  // ── 3D tilt ──────────────────────────────────────────────────────────────
+  const card = document.querySelector('.card');
+  let raf = null, tx = 0, ty = 0, cx = 0, cy = 0;
+
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const nx = (e.clientX - r.left) / r.width  - 0.5;   // -0.5 … 0.5
+    const ny = (e.clientY - r.top)  / r.height - 0.5;
+    tx = ny * -14;   // rotateX
+    ty = nx *  14;   // rotateY
+    cx = nx * 100 + 50;
+    cy = ny * 100 + 50;
+    if (!raf) raf = requestAnimationFrame(applyTilt);
+  });
+
+  card.addEventListener('mouseleave', () => {
+    tx = 0; ty = 0; cx = 50; cy = 50;
+    if (!raf) raf = requestAnimationFrame(applyTilt);
+  });
+
+  function applyTilt() {
+    raf = null;
+    card.style.transform = `rotateX(${tx}deg) rotateY(${ty}deg) translateZ(0)`;
+    // dynamic shadow depth
+    const d = Math.sqrt(tx*tx + ty*ty);
+    const ox = ty * 1.2, oy = -tx * 1.2;
+    card.style.boxShadow = `
+      ${ox*0.2}px ${oy*0.2}px 4px var(--shadow),
+      ${ox*0.5}px ${oy*0.5}px 16px var(--shadow),
+      ${ox}px ${oy}px 48px var(--shadow),
+      ${ox*1.5}px ${oy*1.5}px 96px var(--shadow),
+      inset 0 1px 0 rgba(255,255,255,.08),
+      inset 0 -1px 0 rgba(0,0,0,.12)
+    `;
+  }
+
+  // ── floating particles ────────────────────────────────────────────────────
+  (function spawnParticles() {
+    const wrap = document.querySelector('.wrap');
+    const count = 18;
+    for (let i = 0; i < count; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'particle';
+      const size = 2 + Math.random() * 3;
+      const left = 5 + Math.random() * 90;
+      const top  = 5 + Math.random() * 90;
+      const dur  = 2.5 + Math.random() * 3;
+      const del  = Math.random() * 4;
+      dot.style.cssText = `
+        position:absolute;pointer-events:none;border-radius:50%;
+        width:${size}px;height:${size}px;
+        left:${left}%;top:${top}%;
+        background:var(--corner);
+        animation:floatDot ${dur}s ${del}s ease-in-out infinite;
+        z-index:0;
+      `;
+      card.appendChild(dot);
+    }
+  })();
+
+  // ── custom crosshair ──────────────────────────────────────────────────────
   const xhair = document.getElementById('xhair');
   document.addEventListener('mousemove', e => {
     xhair.style.transform = `translate(${e.clientX - 16}px,${e.clientY - 16}px)`;
@@ -166,7 +388,6 @@
   }
 
   function brace(svg, x1, x2, baseY, dir, key, dimC, sw) {
-    // dir: -1 = opens up (overbrace), +1 = opens down (underbrace)
     const aH = Math.max(8, (x2-x1) * 0.06);
     const pH = aH * 0.5;
     const cr = Math.min(aH * 0.6, 6);
@@ -181,7 +402,6 @@
 
   function draw() {
     const svg  = document.getElementById('leaders');
-    const card = svg.closest('.card');
     const cR   = card.getBoundingClientRect();
     svg.setAttribute('viewBox',`0 0 ${cR.width} ${cR.height}`);
     svg.innerHTML = '';
@@ -204,7 +424,6 @@
     const hi=b('s-hi'), nm=b('s-name'), tl=b('s-tld');
     const emailTop = hi.top, emailBot = hi.bot;
 
-    // above: NAME (closest), then SITE
     let cy = emailTop - sG;
     [
       {key:'name', x1:nm.l, x2:nm.r, lbl:'NAME'},
@@ -220,7 +439,6 @@
       cy = labelY - fs - sG;
     });
 
-    // below: EMAIL
     const {mx:emx, labelY:ely} = brace(svg, hi.l, tl.r, emailBot + sG, +1, 'email', dimC, sw);
     const te = mk('text',{id:'lb-email',x:emx,y:ely+fs+1,
       'font-size':fs,'font-family':'Space Grotesk,SF Mono,monospace',
@@ -229,7 +447,6 @@
     te.style.cssText = `fill:${ldim};transition:fill .2s`;
     svg.appendChild(te);
 
-    // hover
     [['s-hi','email'],['s-at','email'],['s-name','name'],['s-tld','site']].forEach(([sid,key]) => {
       const el = document.getElementById(sid);
       el.onmouseenter = () => hl(key,true);
