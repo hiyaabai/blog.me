@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abai</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+    :root.day {
+      --bg:#eeebe6; --card-bg:#faf9f7; --card-border:#dedad4;
+      --text:#1a1a1a; --corner:rgba(0,0,0,.2); --grid:rgba(0,0,0,.03); --shadow:rgba(0,0,0,.1);
+      --sns:#bbb; --sns-hbg:rgba(0,0,0,.05); --sns-hc:#333;
+      --btn-bg:#1a1a1a; --btn-bd:#1a1a1a; --btn-c:#f5f5f5; --btn-hc:#fff;
+    }
+    :root.night {
+      --bg:#0d0d0f; --card-bg:#111114; --card-border:#2a2a30;
+      --text:#f0f0f0; --corner:rgba(200,255,0,.45); --grid:rgba(255,255,255,.02); --shadow:rgba(0,0,0,.6);
+      --sns:#444; --sns-hbg:rgba(200,255,0,.08); --sns-hc:#c8ff00;
+      --btn-bg:#f0f0f0; --btn-bd:#f0f0f0; --btn-c:#1a1a1a; --btn-hc:#000;
+    }
+
+    html, body {
+      height:100%; background:var(--bg);
+      display:flex; align-items:center; justify-content:center;
+      font-family:'SF Mono','Fira Code','Consolas',monospace;
+      min-height:100dvh; transition:background .5s;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none;
+      background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+      background-size:40px 40px;
+    }
+
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+    .wrap { display:flex; flex-direction:column; align-items:center; gap:16px; animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both; }
+
+    .card {
+      position:relative; width:min(680px,calc(100vw - 40px)); aspect-ratio:1.75/1;
+      background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px;
+      display:flex; align-items:center; justify-content:center; padding:0 8%;
+      box-shadow:0 40px 80px var(--shadow),inset 0 1px 0 rgba(255,255,255,.05);
+      transition:background .5s,border-color .5s,box-shadow .5s;
+    }
+    .card::before,.card::after,.c-br,.c-bl {
+      content:''; position:absolute; width:14px; height:14px; border-color:var(--corner); border-style:solid;
+      transition:border-color .5s;
+    }
+    .card::before{top:12px;left:12px;border-width:1px 0 0 1px}
+    .card::after {top:12px;right:12px;border-width:1px 1px 0 0}
+    .c-br{bottom:12px;right:12px;border-width:0 1px 1px 0}
+    .c-bl{bottom:12px;left:12px;border-width:0 0 1px 1px}
+
+    .leaders { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+
+    .email-addr {
+      font-family:'Ubuntu','SF Mono',sans-serif;
+      font-size:clamp(2rem,6.5vw,3.8rem); font-weight:700; letter-spacing:.12em;
+      color:var(--text); white-space:nowrap; user-select:none;
+      position:relative; z-index:1; transition:color .5s;
+    }
+    #s-at { -webkit-text-stroke:0; }
+    [data-b] { cursor:none; transition:opacity .2s; }
+    [data-b]:hover { opacity:.8; }
+
+    /* custom crosshair — difference blend always visible */
+    #xhair {
+      position:fixed; top:0; left:0; pointer-events:none; z-index:9999;
+      opacity:0; transition:opacity .15s; mix-blend-mode:difference;
+    }
+    #xhair.on { opacity:1; }
+    #xhair line { stroke:#fff; stroke-width:2; }
+    #xhair circle { fill:#fff; }
+
+    .sns {
+      position:absolute; bottom:0; left:0; right:0; padding:0 8% 4%;
+      display:flex; align-items:center; justify-content:center; gap:clamp(10px,2.5vw,22px);
+    }
+    .sns a {
+      display:flex; align-items:center; justify-content:center;
+      width:clamp(26px,4.2vw,32px); height:clamp(26px,4.2vw,32px);
+      border-radius:7px; color:var(--sns); text-decoration:none;
+      transition:color .2s,background .2s,transform .2s;
+    }
+    .sns a:hover { color:var(--sns-hc); background:var(--sns-hbg); transform:scale(1.15); }
+    .sns svg { width:56%; height:56%; fill:currentColor; }
+
+    .theme-btn {
+      width:34px; height:34px; border-radius:50%;
+      border:1px solid var(--btn-bd); background:var(--btn-bg); color:var(--btn-c);
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition:color .3s,background .3s,border-color .3s,transform .2s; flex-shrink:0;
+    }
+    .theme-btn:hover { color:var(--btn-hc); transform:scale(1.1); }
+    .theme-btn svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+    .night .i-moon{display:none} .night .i-sun{display:block}
+    .day   .i-sun{display:none}  .day   .i-moon{display:block}
+
+    @media(max-width:480px){ .card{aspect-ratio:auto;min-height:62vw;padding:0 6%} }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="c-br"></div><div class="c-bl"></div>
+    <svg class="leaders" aria-hidden="true" id="leaders"></svg>
+    <div class="email-addr">
+      <span id="s-hi" data-b="email">hi</span><span
+           id="s-at" data-b="email">@</span><span
+           id="s-name" data-b="name">abai</span><span
+           id="s-tld" data-b="site">.me</span>
+    </div>
+    <div class="sns">
+      <a href="https://blog.abai.me"       title="Blog"      target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></a>
+      <a href="https://github.com/hiyaabai" title="GitHub"  target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.1.82-.26.82-.58v-2.03c-3.34.73-4.04-1.6-4.04-1.6-.54-1.38-1.33-1.75-1.33-1.75-1.08-.74.08-.73.08-.73 1.2.09 1.83 1.23 1.83 1.23 1.07 1.83 2.8 1.3 3.48 1 .1-.78.42-1.3.76-1.6-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.65 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.69.83.57C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg></a>
+      <a href="https://x.com/hiyaabai"     title="X"        target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.912-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+      <a href="https://t.me/hiyaabai"      title="Telegram" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></a>
+      <a href="https://instagram.com/hiyaabai" title="Instagram" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg></a>
+      <a href="mailto:hi@abai.me"      title="Email"     rel="noopener">              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg></a>
+    </div>
+  </div>
+  <button class="theme-btn" id="themeBtn" title="Toggle theme">
+    <svg class="i-sun"  viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    <svg class="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</div>
+<!-- custom crosshair -->
+<svg id="xhair" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+  <line x1="16" y1="2"  x2="16" y2="13"/>
+  <line x1="16" y1="19" x2="16" y2="30"/>
+  <line x1="2"  y1="16" x2="13" y2="16"/>
+  <line x1="19" y1="16" x2="30" y2="16"/>
+  <circle cx="16" cy="16" r="2" fill="#fff"/>
+</svg>
+<script>
+  const NS = 'http://www.w3.org/2000/svg';
+  const autoT = new Date().getHours() >= 6 && new Date().getHours() < 20 ? 'day' : 'night';
+  let theme = localStorage.getItem('theme') || autoT;
+  document.documentElement.classList.add(theme);
+
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    theme = theme === 'day' ? 'night' : 'day';
+    document.documentElement.classList.remove('day','night');
+    document.documentElement.classList.add(theme);
+    localStorage.setItem('theme', theme);
+    draw();
+  });
+
+  // custom crosshair
+  const xhair = document.getElementById('xhair');
+  document.addEventListener('mousemove', e => {
+    xhair.style.transform = `translate(${e.clientX - 16}px,${e.clientY - 16}px)`;
+  });
+  document.querySelectorAll('[data-b]').forEach(el => {
+    el.addEventListener('mouseenter', () => xhair.classList.add('on'));
+    el.addEventListener('mouseleave', () => xhair.classList.remove('on'));
+  });
+
+  function mk(tag, a) {
+    const e = document.createElementNS(NS, tag);
+    for (const [k,v] of Object.entries(a)) e.setAttribute(k,v);
+    return e;
+  }
+
+  function brace(svg, x1, x2, baseY, dir, key, dimC, sw) {
+    // dir: -1 = opens up (overbrace), +1 = opens down (underbrace)
+    const aH = Math.max(8, (x2-x1) * 0.06);
+    const pH = aH * 0.5;
+    const cr = Math.min(aH * 0.6, 6);
+    const mx = (x1+x2)/2;
+    const tY = baseY + dir*aH, pY = tY + dir*pH;
+    const d = `M${x1},${baseY}Q${x1},${tY} ${x1+cr},${tY}L${mx-cr},${tY}Q${mx},${tY} ${mx},${pY}Q${mx},${tY} ${mx+cr},${tY}L${x2-cr},${tY}Q${x2},${tY} ${x2},${baseY}`;
+    const p = mk('path',{id:'br-'+key,d,fill:'none','stroke-linecap':'round','stroke-linejoin':'round','stroke-width':sw});
+    p.style.cssText = `stroke:${dimC};transition:stroke .2s`;
+    svg.appendChild(p);
+    return { mx, labelY: pY + dir*4, aH, pH };
+  }
+
+  function draw() {
+    const svg  = document.getElementById('leaders');
+    const card = svg.closest('.card');
+    const cR   = card.getBoundingClientRect();
+    svg.setAttribute('viewBox',`0 0 ${cR.width} ${cR.height}`);
+    svg.innerHTML = '';
+
+    const isDay = theme === 'day';
+    const dimC  = isDay ? '#ccc'    : '#34343e';
+    const hiC   = isDay ? '#1a1a1a' : '#c8ff00';
+    const ldim  = isDay ? '#bbb'    : '#44444e';
+    const lhi   = isDay ? '#111'    : '#e0e0d8';
+    const fs    = Math.max(8, cR.width * 0.014);
+    const sw    = Math.max(0.8, cR.width * 0.0015);
+    const sG    = Math.max(6, cR.height * 0.018);
+
+    function b(id) {
+      const r = document.getElementById(id).getBoundingClientRect();
+      return { l:r.left-cR.left, r:r.right-cR.left,
+               top:r.top-cR.top, bot:r.bottom-cR.top };
+    }
+
+    const hi=b('s-hi'), nm=b('s-name'), tl=b('s-tld');
+    const emailTop = hi.top, emailBot = hi.bot;
+
+    // above: NAME (closest), then SITE
+    let cy = emailTop - sG;
+    [
+      {key:'name', x1:nm.l, x2:nm.r, lbl:'NAME'},
+      {key:'site', x1:nm.l, x2:tl.r, lbl:'SITE'},
+    ].forEach(({key,x1,x2,lbl}) => {
+      const {mx, labelY} = brace(svg, x1, x2, cy, -1, key, dimC, sw);
+      const t = mk('text',{id:'lb-'+key,x:mx,y:labelY-2,
+        'font-size':fs,'font-family':'Space Grotesk,SF Mono,monospace',
+        'letter-spacing':1.5,'text-anchor':'middle','dominant-baseline':'auto'});
+      t.textContent = lbl;
+      t.style.cssText = `fill:${ldim};transition:fill .2s`;
+      svg.appendChild(t);
+      cy = labelY - fs - sG;
+    });
+
+    // below: EMAIL
+    const {mx:emx, labelY:ely} = brace(svg, hi.l, tl.r, emailBot + sG, +1, 'email', dimC, sw);
+    const te = mk('text',{id:'lb-email',x:emx,y:ely+fs+1,
+      'font-size':fs,'font-family':'Space Grotesk,SF Mono,monospace',
+      'letter-spacing':1.5,'text-anchor':'middle','dominant-baseline':'auto'});
+    te.textContent = 'EMAIL';
+    te.style.cssText = `fill:${ldim};transition:fill .2s`;
+    svg.appendChild(te);
+
+    // hover
+    [['s-hi','email'],['s-at','email'],['s-name','name'],['s-tld','site']].forEach(([sid,key]) => {
+      const el = document.getElementById(sid);
+      el.onmouseenter = () => hl(key,true);
+      el.onmouseleave = () => hl(key,false);
+    });
+
+    function hl(key,on) {
+      const br=document.getElementById('br-'+key), lb=document.getElementById('lb-'+key);
+      if(br) br.style.stroke = on ? hiC : dimC;
+      if(lb) { lb.style.fill = on ? lhi : ldim; lb.style.fontWeight = on ? '600' : '400'; }
+    }
+  }
+
+  document.fonts.ready.then(draw);
+  window.addEventListener('resize', draw);
+</script>
+</body>
+</html>
