@@ -263,12 +263,18 @@
       } else {
         // ── MOON ──
         const R = 13;
-        // glow
+        // glow (不随旋转)
         const halo = ctx.createRadialGradient(C, C, R, C, C, R+9);
         halo.addColorStop(0, 'rgba(180,200,255,.3)');
         halo.addColorStop(1, 'rgba(180,200,255,0)');
         ctx.beginPath(); ctx.arc(C, C, R+9, 0, Math.PI*2);
         ctx.fillStyle = halo; ctx.globalAlpha = 1; ctx.fill();
+
+        // 整个月亮随 rot 旋转
+        ctx.save();
+        ctx.translate(C, C);
+        ctx.rotate(rot);
+        ctx.translate(-C, -C);
 
         // moon disc
         const grd = ctx.createRadialGradient(C-4, C-4, 1, C, C, R);
@@ -278,7 +284,7 @@
         ctx.beginPath(); ctx.arc(C, C, R, 0, Math.PI*2);
         ctx.fillStyle = grd; ctx.globalAlpha = 1; ctx.fill();
 
-        // crescent shadow — offset circle cuts into the disc
+        // crescent shadow
         const ox = 5, oy = -2;
         ctx.save();
         ctx.beginPath(); ctx.arc(C, C, R, 0, Math.PI*2);
@@ -304,6 +310,8 @@
         spec.addColorStop(1, 'rgba(255,255,255,0)');
         ctx.beginPath(); ctx.arc(C, C, R, 0, Math.PI*2);
         ctx.fillStyle = spec; ctx.fill();
+
+        ctx.restore(); // 结束月亮旋转
       }
 
       requestAnimationFrame(frame);
@@ -375,11 +383,50 @@
   const xhair = document.getElementById('xhair');
   document.addEventListener('mousemove', e => {
     xhair.style.transform = `translate(${e.clientX - 16}px,${e.clientY - 16}px)`;
+    spawnTrail(e.clientX, e.clientY);
   });
   document.querySelectorAll('[data-b]').forEach(el => {
     el.addEventListener('mouseenter', () => xhair.classList.add('on'));
     el.addEventListener('mouseleave', () => xhair.classList.remove('on'));
   });
+
+  // ── mouse trail ───────────────────────────────────────────────────────────
+  function spawnTrail(x, y) {
+    const isDay = theme === 'day';
+    const el = document.createElement('span');
+    const size = 4 + Math.random() * 5;
+
+    if (isDay) {
+      // 白天：小太阳光点，金黄色，向外扩散消失
+      el.style.cssText = `
+        position:fixed;pointer-events:none;z-index:9998;
+        width:${size}px;height:${size}px;border-radius:50%;
+        left:${x - size/2}px;top:${y - size/2}px;
+        background:radial-gradient(circle,#ffe066 0%,#ffaa00 60%,transparent 100%);
+        box-shadow:0 0 ${size*1.5}px 2px rgba(255,200,40,.6);
+        transform:scale(1);opacity:.9;
+        transition:transform .5s ease-out,opacity .5s ease-out;
+      `;
+    } else {
+      // 夜间：星点，青绿荧光，向外扩散消失
+      el.style.cssText = `
+        position:fixed;pointer-events:none;z-index:9998;
+        width:${size}px;height:${size}px;border-radius:50%;
+        left:${x - size/2}px;top:${y - size/2}px;
+        background:radial-gradient(circle,#e0ffcc 0%,#c8ff00 55%,transparent 100%);
+        box-shadow:0 0 ${size*1.5}px 2px rgba(180,255,60,.55);
+        transform:scale(1);opacity:.85;
+        transition:transform .5s ease-out,opacity .5s ease-out;
+      `;
+    }
+
+    document.body.appendChild(el);
+    requestAnimationFrame(() => {
+      el.style.transform = `scale(${2 + Math.random()})`;
+      el.style.opacity = '0';
+    });
+    setTimeout(() => el.remove(), 520);
+  }
 
   function mk(tag, a) {
     const e = document.createElementNS(NS, tag);
